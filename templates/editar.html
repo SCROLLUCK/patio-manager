@@ -1,0 +1,107 @@
+{% extends 'base.html' %}
+{% block title %}Editar — {{ bebida.nome }}{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-7 col-lg-6">
+
+        <div class="d-flex align-items-center mb-4">
+            <a href="{{ url_for('index') }}" class="btn btn-outline-secondary btn-sm me-3">
+                <i class="bi bi-arrow-left"></i>
+            </a>
+            <h2 class="mb-0"><i class="bi bi-pencil me-2 text-warning"></i>Editar Bebida</h2>
+        </div>
+
+        <div class="card shadow-sm">
+            <div class="card-body p-4">
+                <form method="POST" novalidate>
+
+                    <div class="mb-3">
+                        <label for="nome" class="form-label fw-semibold">
+                            Nome <span class="text-danger">*</span>
+                        </label>
+                        <input type="text"
+                               id="nome"
+                               name="nome"
+                               class="form-control"
+                               value="{{ bebida.nome }}"
+                               required autofocus>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="categoria" class="form-label fw-semibold">
+                            Categoria <span class="text-danger">*</span>
+                        </label>
+                        <select id="categoria" name="categoria" class="form-select" required>
+                            <option value="">— Selecione —</option>
+                            {% for cat in categorias %}
+                                <option value="{{ cat }}"
+                                    {% if bebida.categoria == cat %}selected{% endif %}>
+                                    {{ cat }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="row g-3 mb-3">
+                        <div class="col-sm-6">
+                            <label for="validade" class="form-label fw-semibold">
+                                Data de Validade <span class="text-danger">*</span>
+                            </label>
+                            <input type="date"
+                                   id="validade"
+                                   name="validade"
+                                   class="form-control"
+                                   value="{{ bebida.validade }}"
+                                   required>
+                        </div>
+                        <div class="col-sm-6">
+                            <label for="quantidade" class="form-label fw-semibold">
+                                Quantidade <span class="text-danger">*</span>
+                            </label>
+                            <input type="number"
+                                   id="quantidade"
+                                   name="quantidade"
+                                   class="form-control"
+                                   min="0"
+                                   value="{{ bebida.quantidade }}"
+                                   required>
+                        </div>
+                        <div class="col-sm-6">
+                            <label for="valor" class="form-label fw-semibold">
+                                Valor Unitário (R$)
+                            </label>
+                            <input type="number"
+                                   id="valor"
+                                   name="valor"
+                                   class="form-control"
+                                   min="0"
+                                   step="0.01"
+                                   value="{{ '%.2f' % (bebida.valor or 0) }}">
+                        </div>
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="form-label fw-semibold text-muted">Data de Registro Original</label>
+                        <input type="text"
+                               class="form-control bg-light text-muted"
+                               value="{{ bebida.data_registro }}"
+                               disabled>
+                    </div>
+
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-warning btn-lg text-white">
+                            <i class="bi bi-floppy me-2"></i>Salvar Alterações
+                        </button>
+                        <a href="{{ url_for('index') }}" class="btn btn-outline-secondary">
+                            Cancelar
+                        </a>
+                    </div>
+
+                </form>
+            </div>
+        </div>
+
+    </div>
+</div>
+{% endblock %}

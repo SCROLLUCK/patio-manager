@@ -1,0 +1,246 @@
+{% extends 'base.html' %}
+{% block title %}Relatório Diário{% endblock %}
+
+{% block content %}
+
+<!-- Cabeçalho -->
+<div class="d-flex justify-content-between align-items-center mb-4 no-print">
+    <h2 class="mb-0">
+        <i class="bi bi-file-earmark-bar-graph me-2 text-primary"></i>Relatório Diário
+    </h2>
+    <div class="d-flex gap-2">
+        <a href="{{ url_for('exportar_csv') }}" class="btn btn-outline-success">
+            <i class="bi bi-filetype-csv me-1"></i>Exportar CSV
+        </a>
+        <button onclick="window.print()" class="btn btn-outline-secondary">
+            <i class="bi bi-printer me-1"></i>Imprimir
+        </button>
+    </div>
+</div>
+
+<!-- Cabeçalho para impressão -->
+<div class="print-only mb-4">
+    <h3 class="text-center">Relatório Diário de Bebidas</h3>
+    <p class="text-center text-muted">Data: {{ today | replace('-', '/') }}</p>
+    <hr>
+</div>
+
+<!-- Cards de resumo -->
+<div class="row g-3 mb-4">
+    <div class="col-sm-6 col-md-3">
+        <div class="card border-0 bg-primary bg-opacity-10 h-100">
+            <div class="card-body text-center">
+                <div class="display-6 fw-bold text-primary">{{ totais.produtos or 0 }}</div>
+                <div class="text-muted small">Produtos cadastrados</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-sm-6 col-md-3">
+        <div class="card border-0 bg-success bg-opacity-10 h-100">
+            <div class="card-body text-center">
+                <div class="display-6 fw-bold text-success">{{ totais.unidades or 0 }}</div>
+                <div class="text-muted small">Unidades em estoque</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-sm-6 col-md-3">
+        <div class="card border-0 bg-warning bg-opacity-10 h-100">
+            <div class="card-body text-center">
+                <div class="display-6 fw-bold text-warning">{{ vencendo_breve | length }}</div>
+                <div class="text-muted small">Vencem em 30 dias</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-sm-6 col-md-3">
+        <div class="card border-0 bg-danger bg-opacity-10 h-100">
+            <div class="card-body text-center">
+                <div class="display-6 fw-bold text-danger">{{ vencidos | length }}</div>
+                <div class="text-muted small">Produtos vencidos</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-sm-6 col-md-3">
+        <div class="card border-0 bg-secondary bg-opacity-10 h-100">
+            <div class="card-body text-center">
+                <div class="display-6 fw-bold text-secondary">
+                    <span data-money="{{ totais.valor_total or 0 }}"></span>
+                </div>
+                <div class="text-muted small">Valor total em estoque</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Registros de hoje -->
+<div class="card shadow-sm mb-4">
+    <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+        <span><i class="bi bi-calendar-check me-2"></i>Registros de Hoje — {{ today | replace('-', '/') }}</span>
+        <span class="badge bg-white text-primary">{{ registros_hoje | length }}</span>
+    </div>
+    {% if registros_hoje %}
+    <div class="table-responsive">
+        <table class="table table-sm mb-0 align-middle">
+            <thead class="table-light">
+                <tr>
+                    <th class="ps-3">Nome</th>
+                    <th>Categoria</th>
+                    <th>Validade</th>
+                    <th class="text-center">Qtd.</th>
+                    <th>Horário</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for b in registros_hoje %}
+                <tr>
+                    <td class="ps-3 fw-semibold">{{ b.nome }}</td>
+                    <td>
+                        <span class="badge rounded-pill bg-primary bg-opacity-10 text-primary">
+                            {{ b.categoria }}
+                        </span>
+                    </td>
+                    <td>{{ b.validade | replace('-', '/') }}</td>
+                    <td class="text-center fw-bold">{{ b.quantidade }}</td>
+                    <td class="text-muted small">{{ b.data_registro[11:16] }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+            <tfoot class="table-light">
+                <tr>
+                    <td colspan="3" class="ps-3 fw-bold">Total de unidades registradas hoje:</td>
+                    <td class="text-center fw-bold">
+                        {{ registros_hoje | sum(attribute='quantidade') }}
+                    </td>
+                    <td></td>
+                </tr>
+            </tfoot>
+        </table>
+    </div>
+    {% else %}
+    <div class="card-body text-center text-muted py-4">
+        <i class="bi bi-calendar-x display-5 d-block mb-2"></i>
+        Nenhum registro feito hoje.
+    </div>
+    {% endif %}
+</div>
+
+<!-- Vencidos -->
+{% if vencidos %}
+<div class="card shadow-sm mb-4 border-danger">
+    <div class="card-header bg-danger text-white d-flex justify-content-between align-items-center">
+        <span><i class="bi bi-x-circle me-2"></i>Produtos Vencidos</span>
+        <span class="badge bg-white text-danger">{{ vencidos | length }}</span>
+    </div>
+    <div class="table-responsive">
+        <table class="table table-sm table-danger mb-0 align-middle">
+            <thead>
+                <tr>
+                    <th class="ps-3">Nome</th>
+                    <th>Categoria</th>
+                    <th>Venceu em</th>
+                    <th class="text-center">Qtd.</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for b in vencidos %}
+                <tr>
+                    <td class="ps-3 fw-semibold">{{ b.nome }}</td>
+                    <td>{{ b.categoria }}</td>
+                    <td class="text-danger fw-bold">
+                        {{ b.validade | replace('-', '/') }}
+                        <span class="badge bg-danger ms-1">
+                            {{ (b.dias_restantes | int | abs) }} dias atrás
+                        </span>
+                    </td>
+                    <td class="text-center fw-bold">{{ b.quantidade }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endif %}
+
+<!-- Vencendo em breve -->
+{% if vencendo_breve %}
+<div class="card shadow-sm mb-4 border-warning">
+    <div class="card-header bg-warning text-dark d-flex justify-content-between align-items-center">
+        <span><i class="bi bi-exclamation-triangle me-2"></i>Vencendo nos próximos 30 dias</span>
+        <span class="badge bg-dark">{{ vencendo_breve | length }}</span>
+    </div>
+    <div class="table-responsive">
+        <table class="table table-sm table-warning mb-0 align-middle">
+            <thead>
+                <tr>
+                    <th class="ps-3">Nome</th>
+                    <th>Categoria</th>
+                    <th>Validade</th>
+                    <th class="text-center">Dias restantes</th>
+                    <th class="text-center">Qtd.</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for b in vencendo_breve %}
+                <tr>
+                    <td class="ps-3 fw-semibold">{{ b.nome }}</td>
+                    <td>{{ b.categoria }}</td>
+                    <td>{{ b.validade | replace('-', '/') }}</td>
+                    <td class="text-center">
+                        <span class="badge {% if b.dias_restantes <= 7 %}bg-danger{% else %}bg-warning text-dark{% endif %}">
+                            {{ b.dias_restantes | int }} dias
+                        </span>
+                    </td>
+                    <td class="text-center fw-bold">{{ b.quantidade }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endif %}
+
+<!-- Resumo por categoria -->
+<div class="card shadow-sm mb-4">
+    <div class="card-header bg-light d-flex justify-content-between align-items-center">
+        <span><i class="bi bi-pie-chart me-2"></i>Resumo por Categoria</span>
+    </div>
+    {% if por_categoria %}
+    <div class="table-responsive">
+        <table class="table table-sm mb-0 align-middle">
+            <thead class="table-light">
+                <tr>
+                    <th class="ps-3">Categoria</th>
+                    <th class="text-center">Produtos</th>
+                    <th class="text-center">Total de Unidades</th>
+                    <th class="text-end">Valor Total</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for c in por_categoria %}
+                <tr>
+                    <td class="ps-3">
+                        <span class="badge rounded-pill bg-primary bg-opacity-10 text-primary border border-primary border-opacity-25">
+                            {{ c.categoria }}
+                        </span>
+                    </td>
+                    <td class="text-center">{{ c.qtd_produtos }}</td>
+                    <td class="text-center fw-bold">{{ c.qtd_total }}</td>
+                    <td class="text-end text-muted"><span data-money="{{ c.valor_total or 0 }}"></span></td>
+                </tr>
+                {% endfor %}
+            </tbody>
+            <tfoot class="table-light">
+                <tr>
+                    <td class="ps-3 fw-bold">TOTAL</td>
+                    <td class="text-center fw-bold">{{ totais.produtos or 0 }}</td>
+                    <td class="text-center fw-bold">{{ totais.unidades or 0 }}</td>
+                    <td class="text-end fw-bold"><span data-money="{{ totais.valor_total or 0 }}"></span></td>
+                </tr>
+            </tfoot>
+        </table>
+    </div>
+    {% else %}
+    <div class="card-body text-center text-muted">Sem dados.</div>
+    {% endif %}
+</div>
+
+{% endblock %}

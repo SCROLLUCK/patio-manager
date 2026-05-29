@@ -1,0 +1,317 @@
+{% extends 'base.html' %}
+{% block title %}Importar do PDF{% endblock %}
+
+{% block content %}
+<div class="d-flex align-items-center mb-4">
+    <a href="{{ url_for('index') }}" class="btn btn-outline-secondary btn-sm me-3">
+        <i class="bi bi-arrow-left"></i>
+    </a>
+    <div>
+        <h2 class="mb-0">
+            <i class="bi bi-file-earmark-arrow-up me-2 text-success"></i>Importar do PDF
+        </h2>
+        <p class="text-muted small mb-0">Suporta Relatório de Validade e Análise ABC (TOTVS)</p>
+    </div>
+</div>
+
+{# ════════════════════════════════════════════════════
+   PASSO 1 — Upload do arquivo
+════════════════════════════════════════════════════ #}
+{% if not preview %}
+
+<div class="row justify-content-center">
+    <div class="col-md-7">
+
+        <div class="card shadow-sm mb-3">
+            <div class="card-body p-4">
+                <form method="POST" enctype="multipart/form-data" id="form-upload">
+                    <input type="hidden" name="action" value="upload">
+
+                    <div class="mb-3">
+                        <label for="arquivo" class="form-label fw-semibold">
+                            Arquivo PDF <span class="text-danger">*</span>
+                        </label>
+                        <input type="file" id="arquivo" name="arquivo"
+                               class="form-control form-control-lg"
+                               accept=".pdf" required>
+                    </div>
+
+                    <!-- Campo de data padrão (só necessário para PDF 2 / ABC) -->
+                    <div class="mb-4" id="bloco-data" style="display:none">
+                        <label for="validade_padrao" class="form-label fw-semibold">
+                            Validade padrão para o relatório ABC
+                            <span class="text-danger">*</span>
+                        </label>
+                        <input type="date" id="validade_padrao" name="validade_padrao"
+                               class="form-control">
+                        <div class="form-text text-muted">
+                            <i class="bi bi-info-circle me-1"></i>
+                            O relatório ABC não contém datas de validade.
+                            Todos os produtos importados receberão esta data.
+                        </div>
+                    </div>
+
+                    <div class="d-grid">
+                        <button type="submit" class="btn btn-success btn-lg" id="btn-analisar">
+                            <i class="bi bi-search me-2"></i>Analisar PDF
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Formatos suportados -->
+        <div class="accordion" id="acc-info">
+
+            <div class="accordion-item border-0 bg-light rounded mb-2">
+                <h2 class="accordion-header">
+                    <button class="accordion-button collapsed bg-light rounded fw-semibold small"
+                            type="button" data-bs-toggle="collapse"
+                            data-bs-target="#info-pdf1">
+                        <i class="bi bi-file-earmark-text me-2 text-primary"></i>
+                        Formato 1 — Relatório de Estoque por Data de Validade
+                    </button>
+                </h2>
+                <div id="info-pdf1" class="accordion-collapse collapse" data-bs-parent="#acc-info">
+                    <div class="accordion-body pt-0">
+                        <p class="small text-muted mb-2">
+                            Detectado automaticamente. Importa <strong>nome, data de validade e quantidade</strong> por lote.
+                            Cada lote com data diferente gera um registro separado.
+                        </p>
+                        <div class="bg-white rounded border p-3">
+<pre class="small text-muted mb-0" style="font-size:0.72rem">Produto 59943 CERV HB GF 500ML WEISSBIER T5,1%
+Estoque Disponível   60,000
+Data de Validade     Estq. por Validade
+01/09/2026           60,000
+
+Produto 65002 CERV EISENBAHN LN 355ML PALE ALE T4,8%
+Estoque Disponível   33,000
+Data de Validade     Estq. por Validade
+11/07/2026           24,000
+10/07/2026            9,000</pre>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="accordion-item border-0 bg-light rounded">
+                <h2 class="accordion-header">
+                    <button class="accordion-button collapsed bg-light rounded fw-semibold small"
+                            type="button" data-bs-toggle="collapse"
+                            data-bs-target="#info-pdf2">
+                        <i class="bi bi-bar-chart me-2 text-warning"></i>
+                        Formato 2 — Análise ABC do Estoque
+                    </button>
+                </h2>
+                <div id="info-pdf2" class="accordion-collapse collapse" data-bs-parent="#acc-info">
+                    <div class="accordion-body pt-0">
+                        <p class="small text-muted mb-2">
+                            Detectado automaticamente. Importa <strong>nome e quantidade em estoque</strong>.
+                            Requer data de validade padrão (campo acima).
+                        </p>
+                        <div class="bg-white rounded border p-3">
+<pre class="small text-muted mb-0" style="font-size:0.72rem">Código  Produto                              Dias Sem  Qtd.Est.  Preço  ...
+58031   CONHAQUE HENNESSY COLLECTION 200ML   4218      1,000     2.399,99
+205834  CERV PETRA LN 330ML P MALT T4%        926    120,000         5,49</pre>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div><!-- /accordion -->
+
+    </div>
+</div>
+
+<script>
+    // Mostra o campo de data padrão quando o usuário seleciona um arquivo
+    // (não é possível saber o formato antes do upload, mas exibimos preventivamente)
+    const fileInput = document.getElementById('arquivo');
+    const blocoData = document.getElementById('bloco-data');
+    const dataInput = document.getElementById('validade_padrao');
+
+    fileInput.addEventListener('change', () => {
+        // Mostramos o campo de data sempre — o servidor descarta se não for necessário
+        if (fileInput.files.length > 0) {
+            blocoData.style.display = 'block';
+        } else {
+            blocoData.style.display = 'none';
+        }
+    });
+
+    // Spinner no botão ao submeter
+    document.getElementById('form-upload').addEventListener('submit', () => {
+        const btn = document.getElementById('btn-analisar');
+        btn.disabled = true;
+        btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Analisando...';
+    });
+</script>
+
+{# ════════════════════════════════════════════════════
+   PASSO 2 — Preview e confirmação
+════════════════════════════════════════════════════ #}
+{% else %}
+
+<div class="alert alert-success d-flex align-items-center mb-3">
+    <i class="bi bi-check-circle-fill me-3 fs-4 flex-shrink-0"></i>
+    <div>
+        <strong>{{ produtos | length }}</strong> item(ns) encontrado(s)
+        no <em>{{ fmt_label }}</em>.
+        Revise a lista e selecione o que importar.
+    </div>
+</div>
+{% if duplicatas %}
+<div class="alert alert-warning d-flex align-items-center mb-4">
+    <i class="bi bi-exclamation-triangle-fill me-3 fs-4 flex-shrink-0"></i>
+    <div>
+        <strong>{{ duplicatas }}</strong> item(ns) já existem na base de dados
+        (mesmo nome e validade) e serão <strong>sobrescritos</strong> se mantidos selecionados.
+    </div>
+</div>
+{% endif %}
+
+<form method="POST" id="form-confirmar">
+    <input type="hidden" name="action" value="confirmar">
+    <!-- Dados serializados via JS para evitar problemas com encoding no atributo HTML -->
+    <input type="hidden" name="produtos_json" id="campo-json">
+
+    <div class="card shadow-sm mb-3">
+        <!-- Barra de controle -->
+        <div class="card-header bg-white d-flex justify-content-between align-items-center py-2 flex-wrap gap-2">
+            <div class="form-check mb-0">
+                <input class="form-check-input" type="checkbox" id="check-todos" checked>
+                <label class="form-check-label fw-semibold" for="check-todos">
+                    Selecionar todos
+                </label>
+            </div>
+            <div class="d-flex align-items-center gap-3">
+                <span class="text-muted small" id="info-sel">
+                    {{ produtos | length }} / {{ produtos | length }} selecionado(s)
+                </span>
+                <!-- Filtro rápido por categoria -->
+                <select id="filtro-cat" class="form-select form-select-sm" style="width:auto">
+                    <option value="">Todas as categorias</option>
+                    {% for cat in produtos | map(attribute='categoria') | unique | sort %}
+                        <option value="{{ cat }}">{{ cat }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+        </div>
+
+        <!-- Tabela com scroll -->
+        <div class="table-responsive" style="max-height: 60vh; overflow-y: auto;">
+            <table class="table table-sm table-hover mb-0 align-middle">
+                <thead class="table-light" style="position:sticky;top:0;z-index:1">
+                    <tr>
+                        <th class="ps-3" style="width:42px"></th>
+                        <th>Nome</th>
+                        <th>Categoria</th>
+                        <th>Validade</th>
+                        <th class="text-center">Qtd.</th>
+                        <th class="text-end">Vlr. Unit.</th>
+                    </tr>
+                </thead>
+                <tbody id="tbody-produtos">
+                    {% for p in produtos %}
+                    <tr data-cat="{{ p.categoria }}" {% if p.existente %}class="table-warning"{% endif %}>
+                        <td class="ps-3">
+                            <input type="checkbox"
+                                   name="selecionado"
+                                   value="{{ loop.index0 }}"
+                                   class="form-check-input item-chk"
+                                   checked>
+                        </td>
+                        <td class="fw-semibold small">
+                            {{ p.nome }}
+                            {% if p.existente %}
+                            <span class="badge bg-warning text-dark ms-1" title="Será sobrescrito">
+                                <i class="bi bi-arrow-repeat me-1"></i>sobrescrever
+                            </span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <span class="badge rounded-pill bg-primary bg-opacity-10
+                                         text-primary border border-primary border-opacity-25 small">
+                                {{ p.categoria }}
+                            </span>
+                        </td>
+                        <td class="small">{{ p.validade | replace('-', '/') }}</td>
+                        <td class="text-center fw-bold">{{ p.quantidade }}</td>
+                        <td class="text-end text-muted small">
+                            {% if p.valor %}<span data-money="{{ p.valor }}"></span>{% else %}—{% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Botões de ação -->
+    <div class="d-flex gap-2 flex-wrap">
+        <button type="submit" class="btn btn-success btn-lg" id="btn-importar">
+            <i class="bi bi-download me-2"></i>
+            Importar <span id="n-sel">{{ produtos | length }}</span> item(ns)
+        </button>
+        <a href="{{ url_for('importar') }}" class="btn btn-outline-secondary btn-lg">
+            <i class="bi bi-arrow-counterclockwise me-1"></i>Escolher outro PDF
+        </a>
+    </div>
+</form>
+
+<script>
+    // ── Serializa os dados no hidden field antes de qualquer interação ──
+    const dados = {{ produtos | tojson }};
+    document.getElementById('campo-json').value = JSON.stringify(dados);
+
+    // ── Elementos ──
+    const checkTodos = document.getElementById('check-todos');
+    const infoSel    = document.getElementById('info-sel');
+    const nSel       = document.getElementById('n-sel');
+    const filtro     = document.getElementById('filtro-cat');
+    const total      = dados.length;
+
+    function linhasVisiveis() {
+        return document.querySelectorAll('#tbody-produtos tr:not([style*="display: none"])');
+    }
+
+    function atualizarContador() {
+        const marcados = document.querySelectorAll('.item-chk:checked').length;
+        infoSel.textContent = marcados + ' / ' + total + ' selecionado(s)';
+        nSel.textContent    = marcados;
+        const visChecks     = [...linhasVisiveis()].map(r => r.querySelector('.item-chk'));
+        checkTodos.checked  = visChecks.length > 0 && visChecks.every(c => c.checked);
+        checkTodos.indeterminate = !checkTodos.checked && visChecks.some(c => c.checked);
+    }
+
+    // ── Selecionar / desselecionar todos (somente visíveis) ──
+    checkTodos.addEventListener('change', () => {
+        linhasVisiveis().forEach(r => {
+            r.querySelector('.item-chk').checked = checkTodos.checked;
+        });
+        atualizarContador();
+    });
+
+    document.querySelectorAll('.item-chk').forEach(c =>
+        c.addEventListener('change', atualizarContador)
+    );
+
+    // ── Filtro por categoria ──
+    filtro.addEventListener('change', () => {
+        const cat = filtro.value;
+        document.querySelectorAll('#tbody-produtos tr').forEach(tr => {
+            tr.style.display = (!cat || tr.dataset.cat === cat) ? '' : 'none';
+        });
+        atualizarContador();
+    });
+
+    // ── Spinner no botão de importar ──
+    document.getElementById('form-confirmar').addEventListener('submit', function () {
+        const btn = document.getElementById('btn-importar');
+        btn.disabled = true;
+        btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Importando...';
+    });
+</script>
+
+{% endif %}
+{% endblock %}

@@ -1,0 +1,124 @@
+/* ── Variáveis ── */
+:root {
+    --primary: #0d6efd;
+}
+
+/* ── Layout ── */
+body {
+    background-color: #f8f9fa;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+.container {
+    flex: 1;
+}
+
+/* ── Navbar ── */
+.navbar-brand {
+    font-size: 1.2rem;
+    letter-spacing: 0.3px;
+}
+
+.nav-link.active {
+    font-weight: 600;
+    background: rgba(255,255,255,0.15);
+    border-radius: 6px;
+}
+
+/* ── Cards ── */
+.card {
+    border-radius: 10px;
+    border: 1px solid rgba(0,0,0,.07);
+}
+
+.card-header {
+    border-radius: 10px 10px 0 0 !important;
+    font-weight: 600;
+}
+
+/* ── Tabelas ── */
+.table th {
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: #6c757d;
+    font-weight: 600;
+}
+
+.table-hover tbody tr:hover {
+    background-color: rgba(13, 110, 253, 0.04);
+}
+
+/* ── Formulários ── */
+.form-label {
+    font-size: 0.9rem;
+}
+
+.form-control:focus,
+.form-select:focus {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 0.15rem rgba(13, 110, 253, 0.2);
+}
+
+/* ── Badges de categoria ── */
+.badge.rounded-pill {
+    font-size: 0.75rem;
+    font-weight: 500;
+    padding: 0.35em 0.75em;
+}
+
+/* ── Impressão ── */
+@media print {
+    .no-print {
+        display: none !important;
+    }
+
+    .print-only {
+        display: block !important;
+    }
+
+    .navbar,
+    footer,
+    .alert {
+        display: none !important;
+    }
+
+    .card {
+        border: 1px solid #dee2e6 !important;
+        box-shadow: none !important;
+        page-break-inside: avoid;
+    }
+
+    body {
+        background: white;
+        font-size: 12px;
+    }
+
+    .container {
+        max-width: 100% !important;
+        padding: 0;
+    }
+
+    .badge {
+        border: 1px solid currentColor;
+    }
+}
+
+@media screen {
+    .print-only {
+        display: none;
+    }
+}
+
+/* ── Responsividade ── */
+@media (max-width: 576px) {
+    h2 {
+        font-size: 1.4rem;
+    }
+
+    .display-6 {
+        font-size: 1.8rem;
+    }
+}
