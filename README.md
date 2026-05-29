@@ -10,7 +10,7 @@ Controle de estoque de bebidas com importação de PDFs do TOTVS.
 
 ```bash
 # Clone o repositório
-git clone <url-do-repo>
+git clone git@github.com:SCROLLUCK/patio-manager.git
 cd patio-manager
 
 # Crie e ative o ambiente virtual
